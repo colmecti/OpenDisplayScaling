@@ -1,0 +1,25 @@
+name: Build and test
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build, test and package
+        run: make package
+      - name: Inspect architecture and signature
+        run: |
+          lipo -archs build/OpenDisplayScaling.app/Contents/MacOS/OpenDisplayScaling
+          codesign --verify --deep --strict build/OpenDisplayScaling.app
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: OpenDisplayScaling-arm64-preview
+          path: dist/*
+          if-no-files-found: error

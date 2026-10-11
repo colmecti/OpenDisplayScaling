@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="330" viewBox="0 0 1200 330" role="img" aria-labelledby="title desc">
+  <title id="title">OpenDisplayScaling</title><desc id="desc">Your display. A more comfortable size. Free and open-source HiDPI scaling for macOS.</desc>
+  <rect width="1200" height="330" rx="28" fill="#0c1426"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="72" y="86" width="226" height="150" rx="18" stroke="#59b8ff" stroke-width="7"/>
+    <rect x="109" y="117" width="124" height="88" rx="8" stroke="#20d9bd" stroke-width="5"/>
+    <path d="M210 144l50-36m-26 0h26v26" stroke="#fff" stroke-width="7"/>
+    <path d="M185 242v28m-40 0h80" stroke="#59b8ff" stroke-width="7"/>
+  </g>
+  <text x="358" y="121" fill="#20d9bd" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" font-size="15" letter-spacing="2">FREE &amp; OPEN SOURCE</text>
+  <text x="354" y="181" fill="#f4f7fc" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" font-size="49" font-weight="700">OpenDisplayScaling</text>
+  <text x="358" y="226" fill="#aab8ce" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" font-size="24">Your display. A more comfortable size.</text>
+  <text x="358" y="270" fill="#7185a4" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" font-size="15">HiDPI scaling for external Mac displays.</text>
+</svg>

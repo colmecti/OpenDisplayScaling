@@ -1,0 +1,28 @@
+name: Display or app problem
+description: Report a compatibility problem or reproducible bug.
+body:
+  - type: textarea
+    id: setup
+    attributes:
+      label: Your setup
+      description: Mac chip, macOS version, app version, monitor model, connection and adapters. Do not include serial numbers.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Include steps, requested desktop size and refresh rate, expected result, and actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Recovery
+      description: Did Restore, the timeout, or quitting recover your display? Any other scaling apps running?
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Optional diagnostics
+      description: Paste the app's --diagnostics output. Review it before posting; omit private or unrelated information.
+      render: json
