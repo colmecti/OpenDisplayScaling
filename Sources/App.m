@@ -2,6 +2,7 @@
 #import <Cocoa/Cocoa.h>
 #import <ServiceManagement/ServiceManagement.h>
 #import "DisplayController.h"
+#import "StudioWindow.h"
 #import <signal.h>
 
 static NSTextField *Label(NSString *text, CGFloat size, NSFontWeight weight) {
@@ -22,6 +23,7 @@ static NSButton *Button(NSString *title, id target, SEL action) {
 
 @interface ODSApp : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate, NSMenuDelegate>
 @property(strong) NSWindow *window;
+@property(strong) ODSStudioWindow *studio;
 @property(strong) NSStatusItem *statusItem;
 @property(strong) NSMenuItem *statusLabel, *loginMenu;
 @property(strong) ODSDisplayController *controller;
@@ -47,8 +49,12 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     self.controller = [ODSDisplayController new];
     self.recovered = [self.controller recoverPreviousSession];
     [self createMainMenu]; [self createMenu]; [self createWindow]; [self refreshDisplays:nil];
+    self.studio=[[ODSStudioWindow alloc] initReadOnly:NO];
     __weak typeof(self) weakSelf = self;
     self.controller.onChange = ^{ [weakSelf updateUI]; };
+    self.studio.openScaling=^{[weakSelf showScaling:nil];};
+    self.studio.toggleLogin=^{[weakSelf toggleLogin:nil];};
+    self.studio.manager.canChangeLayout=^BOOL{return weakSelf.controller.state==ODSIdle;};
     [self updateUI];
     // A login launch stays in the menu bar when automatic reapply is enabled.
     if (![NSUserDefaults.standardUserDefaults boolForKey:@"ODSReapplyOnLaunch"] || self.recovered) [self showWindow:nil];
@@ -62,6 +68,8 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     NSMenu *bar=[NSMenu new];
     NSMenuItem *application=[NSMenuItem new]; NSMenu *appMenu=[NSMenu new]; application.submenu=appMenu; [bar addItem:application];
     [appMenu addItemWithTitle:@"About OpenDisplayScaling" action:@selector(about:) keyEquivalent:@""].target=self;
+    [appMenu addItemWithTitle:@"Display manager…" action:@selector(showWindow:) keyEquivalent:@","].target=self;
+    [appMenu addItemWithTitle:@"Custom HiDPI scaling…" action:@selector(showScaling:) keyEquivalent:@"D"].target=self;
     [appMenu addItem:NSMenuItem.separatorItem];
     [appMenu addItemWithTitle:@"Hide OpenDisplayScaling" action:@selector(hide:) keyEquivalent:@"h"];
     [appMenu addItemWithTitle:@"Quit OpenDisplayScaling" action:@selector(terminate:) keyEquivalent:@"q"];
@@ -87,7 +95,8 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     NSMenuItem *(^item)(NSString *, SEL, NSString *) = ^NSMenuItem *(NSString *name, SEL action, NSString *key) {
         NSMenuItem *i = [[NSMenuItem alloc] initWithTitle:name action:action keyEquivalent:key]; i.target=self; [menu addItem:i]; return i;
     };
-    item(@"Settings…", @selector(showWindow:), @",");
+    item(@"Display manager…", @selector(showWindow:), @",");
+    item(@"Custom HiDPI scaling…", @selector(showScaling:), @"D");
     item(@"Restore original display", @selector(restore:), @"");
     self.loginMenu = item(@"Launch at login", @selector(toggleLogin:), @"");
     [menu addItem:NSMenuItem.separatorItem];
@@ -263,6 +272,7 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     }
 }
 - (void)apply:(id)sender {
+    if (self.studio.manager.pending || self.studio.manager.hasLayoutChanges) { self.statusText.stringValue=@"Restore the display-manager layout before starting custom HiDPI."; return; }
     NSString *error=nil; ODSConfiguration *c=[self inputConfiguration:&error]; ODSDisplay *d=[self selectedDisplay];
     if (!c || !d) { self.statusText.stringValue=error ?: @"Choose a connected external display."; return; }
     self.autoAttempted=YES;
@@ -273,7 +283,7 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     self.autoAttempted=YES; [self.controller restore]; [self refreshDisplays:nil];
 }
 - (void)tryAutomaticApply {
-    if (self.autoAttempted || self.recovered || self.controller.state!=ODSIdle || ![NSUserDefaults.standardUserDefaults boolForKey:@"ODSReapplyOnLaunch"]) return;
+    if (self.studio.manager.pending || self.studio.manager.hasLayoutChanges || self.autoAttempted || self.recovered || self.controller.state!=ODSIdle || ![NSUserDefaults.standardUserDefaults boolForKey:@"ODSReapplyOnLaunch"]) return;
     NSDictionary *profile=[NSUserDefaults.standardUserDefaults dictionaryForKey:@"ODSLastProfile"];
     ODSConfiguration *c=[ODSConfiguration fromDictionary:profile[@"configuration"]];
     if (!c || ![profile[@"uuid"] isKindOfClass:NSString.class]) return;
@@ -319,12 +329,18 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     self.statusItem.button.toolTip=self.controller.message;
     // Bring confirmation forward once, not on every countdown tick. Repeated
     // activation would steal focus from whatever the user is working on.
-    if (confirming && self.previousControllerState!=ODSConfirming) [self showWindow:nil];
+    if (confirming && self.previousControllerState!=ODSConfirming) [self showScaling:nil];
     self.previousControllerState=self.controller.state;
     [self updateLoginState];
 }
-- (void)menuWillOpen:(NSMenu *)menu { [self updateLoginState]; }
-- (void)showWindow:(id)sender { [self.window makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES]; }
+- (void)menuWillOpen:(NSMenu *)menu {
+    while(menu.numberOfItems && menu.itemArray.firstObject!=self.statusLabel) [menu removeItemAtIndex:0];
+    NSMenu *displayMenu=[NSMenu new]; [self.studio populateMenu:displayMenu];
+    NSInteger index=0; for(NSMenuItem *item in displayMenu.itemArray.copy) {[displayMenu removeItem:item]; [menu insertItem:item atIndex:index++];}
+    [self updateLoginState];
+}
+- (void)showWindow:(id)sender { if(self.studio) [self.studio show]; else [self showScaling:sender]; }
+- (void)showScaling:(id)sender { [self.window makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES]; }
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag { [self showWindow:nil]; return YES; }
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender { return NO; }
 - (void)willSleep:(NSNotification *)notification {
@@ -333,31 +349,35 @@ static NSButton *Button(NSString *title, id target, SEL action) {
 }
 - (void)openGitHub:(id)sender { [NSWorkspace.sharedWorkspace openURL:[NSURL URLWithString:@"https://github.com/colmecti/OpenDisplayScaling"]]; }
 - (void)about:(id)sender {
-    NSAlert *alert=[NSAlert new]; alert.messageText=@"OpenDisplayScaling 0.1.0";
+    NSAlert *alert=[NSAlert new]; alert.messageText=@"OpenDisplayScaling 0.2.0";
     alert.informativeText=@"A free, MIT-licensed HiDPI scaling utility by colmecti.\n\nUses private macOS display APIs. This early release is for Apple silicon Macs running macOS 13 or later.\n\nNo analytics, accounts, or subscriptions.\n\nIncludes MIT-licensed API declarations and ideas from hidpi-mirror by Petr Baudis. See ThirdPartyNotices in the app Resources and source repository.";
     [alert runModal];
 }
 - (void)quit:(id)sender { [NSApp terminate:nil]; }
 - (void)applicationWillTerminate:(NSNotification *)notification {
-    [self.discoveryTimer invalidate]; self.controller.onChange=nil; [self.controller shutdown];
+    [self.discoveryTimer invalidate]; [self.studio shutdown]; self.controller.onChange=nil; [self.controller shutdown];
 }
 @end
 
 int main(int argc, const char *argv[]) {
     @autoreleasepool {
-        if (argc>1 && strcmp(argv[1],"--version")==0) { puts("OpenDisplayScaling 0.1.0"); return 0; }
+        if (argc>1 && strcmp(argv[1],"--version")==0) { puts("OpenDisplayScaling 0.2.0"); return 0; }
         if (argc>1 && strcmp(argv[1],"--diagnostics")==0) {
             NSMutableArray *displays=[NSMutableArray new];
             for (ODSDisplay *d in ODSDisplayController.externalDisplays)
                 [displays addObject:@{@"name":d.name,@"reportedWidth":@(d.nativeWidth),@"reportedHeight":@(d.nativeHeight),
                     @"refreshRate":@(d.refreshRate),@"mirrored":@(d.mirrored)}];
-            NSDictionary *report=@{@"appVersion":@"0.1.0",@"macOS":NSProcessInfo.processInfo.operatingSystemVersionString,
+            NSDictionary *report=@{@"appVersion":@"0.2.0",@"macOS":NSProcessInfo.processInfo.operatingSystemVersionString,
                 @"architecture":@"arm64",@"virtualDisplayAPIAvailable":@(NSClassFromString(@"CGVirtualDisplay")!=Nil),@"displays":displays};
             NSData *json=[NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted|NSJSONWritingSortedKeys error:nil];
             fwrite(json.bytes,1,json.length,stdout); puts(""); return 0;
         }
         NSApplication *app=NSApplication.sharedApplication;
         [app setActivationPolicy:NSApplicationActivationPolicyAccessory];
+        if (argc>1 && strcmp(argv[1],"--preview")==0) {
+            ODSStudioWindow *preview=[[ODSStudioWindow alloc] initReadOnly:YES];
+            [preview show]; [app run]; [preview shutdown]; return 0;
+        }
         ODSApp *delegate=[ODSApp new]; app.delegate=delegate;
         signal(SIGTERM,SIG_IGN); signal(SIGINT,SIG_IGN);
         dispatch_source_t term=dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL,SIGTERM,0,dispatch_get_main_queue());

@@ -63,7 +63,32 @@ over the network. Source/support links open the user's browser only when selecte
 
 ## Distribution
 
-The build targets Apple silicon and macOS 13+. The included CI template can compile and exercise pure
+The build targets Apple silicon and macOS 13+. GitHub Actions compiles and exercises pure
 configuration logic without manipulating a display. Native display tests remain
 manual. The preview uses ad-hoc code signing; it is not Developer ID signed or
 notarized. No signing key is included in source or release assets.
+
+
+## 0.2 display-manager modules
+
+`StudioWindow` owns the sidebar, dynamic display pages, menus, groups and custom
+hardware controls. `DisplayManager` discovers all displays and isolates native
+CoreGraphics changes from the existing `DisplayController` virtual-HiDPI engine.
+A native transaction uses app-only scope, captures its rollback state, and requires
+confirmation. Failed mutations cancel the transaction. Group application validates
+all required displays/modes before starting. Display-management changes and custom
+HiDPI are mutually excluded until their previous configuration is restored.
+
+`HardwareControls` runs only the app-bundled m1ddc executable with fixed argument
+arrays and a display UUID, on a serial queue with a timeout. There is no shell
+interpolation or default-display fallback. Hardware readback gates slider ranges;
+DDC writes request readback. Native built-in brightness dynamically resolves
+DisplayServices. `DisplayPreview` excludes this app's own windows and starts a
+ScreenCaptureKit stream only on an explicit action. It requests no audio and sends
+no frames over the network. `HotKeys` uses Carbon hotkey registration, not a keyboard
+monitor. Software image adjustments are per-screen mouse-transparent windows.
+
+`--preview` constructs only the read-only studio. It bypasses the ordinary app's
+recovery, login, reapply and capture paths. The backend also rejects writes in this
+mode; disabled buttons are not the only guard. See `FEATURES.md` for lifetime and
+verification limits.

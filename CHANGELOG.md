@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.0 — Development preview
+
+- Native display-manager sidebar, per-display menu controls, saved layout groups,
+  offline display names and configurable menu sections.
+- Native modes, mirroring, relative positioning and main display with app-scoped
+  transactions and 20-second rollback; separate standalone virtual screens.
+- Local ScreenCaptureKit picture-in-picture with explicit permission flow.
+- Native Apple brightness, DDC controls through pinned MIT m1ddc source, validated
+  ICC profile selection, software dimming/warmth and optional brightness following.
+- Saved hardware controls and optional global shortcuts.
+- Mocked layout/rollback and DDC packet tests; fixes to vendored DDC decoding.
+- GitHub Actions enabled. Published v0.1 download remains unchanged.
+- See `docs/FEATURES.md` for missing advanced features and pending hardware/UI checks.
+
 ## 0.1.0 — 2026-10-11
 
 First public preview.

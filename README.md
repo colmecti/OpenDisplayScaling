@@ -7,7 +7,14 @@
   <a href="https://github.com/colmecti/OpenDisplayScaling/releases/tag/v0.1.0"><img alt="Early release" src="https://img.shields.io/badge/release-0.1.0%20preview-8e9aae"></a>
 </p>
 
-**Larger text on your external Mac display, with HiDPI rendering. Free and open source.**
+**A free, open-source Mac display manager with custom HiDPI scaling.**
+
+The `main` branch contains the **0.2 development preview**: a native sidebar,
+per-display controls, virtual screens, saved groups, hardware controls and local
+picture-in-picture. See the [feature coverage](docs/FEATURES.md) for implemented
+controls, system-settings shortcuts and remaining gaps. The published **v0.1.0**
+download remains the earlier scaling utility while v0.2 hardware and final UI
+validation are pending.
 
 Choose a monitor, enter the desktop size you want, and apply it. OpenDisplayScaling
 renders the desktop at twice that width and height, then mirrors it to your monitor.
@@ -25,6 +32,9 @@ the interface comfortably sized.
 <p align="center"><img src="docs/settings.png" alt="OpenDisplayScaling settings showing a 2580 by 1080 HiDPI desktop, custom-size fields, and login checkboxes" width="580"></p>
 
 ## What it does
+
+The following describes the v0.1 scaling engine, retained in v0.2. For the expanded
+display manager, see the [full feature table](docs/FEATURES.md).
 
 - **Custom desktop size.** Enter width and height, or start with a size preset.
 - **Display proportions.** Keep the monitor's proportions while editing either dimension.
@@ -48,7 +58,11 @@ The app must remain running to maintain its virtual display.
    [official instructions for opening an unverified app](https://support.apple.com/102445).
    Do not disable Gatekeeper or System Integrity Protection.
 
-The app does not need administrator, Accessibility, or Screen Recording access.
+The published v0.1 app does not need administrator, Accessibility, or Screen
+Recording access. In the v0.2 source preview, local picture-in-picture requests
+Screen Recording only when you open it. Other display controls do not require
+that permission. The bundled DDC helper is unprivileged; global shortcuts use
+Carbon registration without monitoring arbitrary keyboard input.
 If you prefer not to run a downloaded unnotarized binary, build the source locally.
 
 ## Choose a comfortable size
@@ -102,7 +116,7 @@ resolution for a mirror set. That is not a claim that the physical panel changed
 - **Apple silicon, macOS 13+.** macOS 26.3.1 on Apple M5 is the only hardware/OS
   combination tested so far. Earlier supported deployment targets are unverified.
 - **Private APIs.** A macOS update may break virtual-display behavior.
-- **One external display at a time.** Built-in displays and already mirrored
+- **Custom virtual scaling: one external display at a time.** Built-in displays and already mirrored
   or rotated displays are not supported targets. DisplayLink and other virtual-display
   software have not been validated.
 - **SDR desktop use first.** HDR, VRR/ProMotion behavior, protected video,
@@ -129,15 +143,24 @@ open build/OpenDisplayScaling.app
 ```
 
 Build output is an ad-hoc-signed Apple silicon app. No package manager or
-third-party runtime dependency is needed. For login-item testing, move the
+separately installed third-party runtime dependency is needed. The build compiles
+and bundles the MIT-licensed m1ddc helper from the pinned vendored source. For login-item testing, move the
 app into Applications before opening it.
 
 `make package` builds, runs the non-display tests, and creates an app ZIP plus
 SHA-256 checksums in `dist/`. `make clean` removes only `build/` and `dist/`.
 See [architecture](docs/ARCHITECTURE.md) and [release process](docs/RELEASING.md).
-A ready-to-enable [GitHub Actions workflow](docs/github-actions-ci.yml) is included;
-hosted checks are not yet enabled because the publishing credential lacks workflow
-permission. This preview was built and checked locally.
+[GitHub Actions](https://github.com/colmecti/OpenDisplayScaling/actions) builds,
+tests, and packages pushes to `main` and pull requests using the
+[CI workflow](.github/workflows/ci.yml). The original v0.1.0 preview was built
+and checked locally before hosted CI was added.
+
+Read-only interface preview (does not register login items, recover sessions,
+apply display settings, start capture, or probe hardware):
+
+```sh
+build/OpenDisplayScaling.app/Contents/MacOS/OpenDisplayScaling --preview
+```
 
 Read-only diagnostics:
 

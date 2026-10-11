@@ -1,3 +1,27 @@
+# 0.2 development-preview validation
+
+- `make package` compiles the native app and bundled m1ddc helper, verifies ad-hoc
+  signatures and builds the release ZIP.
+- 950 original configuration/mode assertions, 36 display-manager assertions and
+  10 DDC packet assertions pass locally. New suites replace all CoreGraphics and
+  I2C writes with stubs and use deterministic display fixtures, including on
+  headless CI.
+- Manager tests cover preview no-write behavior, ownership blocking, driver
+  rejection/cancellation, app-only transaction scope, Keep with hardware-state verification, Revert, timer expiry,
+  restoration and all-or-nothing rejection of a missing group display.
+- DDC tests cover big-endian values, malformed/unsupported replies, invalid ranges,
+  null replies and outgoing packets whose checksum is zero.
+- The initial new native overview was visually inspected in `--preview` mode.
+  The Mac then locked, blocking final visual checks of the expanded pages.
+- **Pending:** real native mode/arrangement/mirroring rollback; standalone virtual
+  screens; DDC and native hardware writes; ICC changes; Screen Recording permission
+  and live frames; global shortcuts; auto dimming; login and sleep/unplug behavior.
+  No physical display configuration was changed during this implementation.
+
+The following is the historical v0.1 record, not evidence for the new controls.
+
+---
+
 # Validation record and test plan
 
 This file separates source checks from actual monitor behavior. A successful
@@ -21,7 +45,7 @@ display, connection, or lifecycle path.
 | Native settings layout and accessible control labels | Visually inspected |
 
 Run `make test` for the non-display suite. `make package` also builds and packages
-the app. The ready-to-enable workflow in `docs/github-actions-ci.yml` performs these checks without applying a monitor configuration. Hosted CI is not active in this release: the publishing credential lacks GitHub’s `workflow` scope.
+the app. The workflow in `.github/workflows/ci.yml` performs these checks without applying a monitor configuration. Hosted CI was added after the original v0.1.0 release; its results are listed in the repository’s Actions tab.
 
 ### Physical observations
 

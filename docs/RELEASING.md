@@ -1,6 +1,6 @@
 # Release process
 
-1. Update version strings in `Resources/Info.plist`, `Sources/App.m`, the README,
+1. Update version strings in `Resources/Info.plist`, `Sources/App.m`, `Sources/StudioWindow.m`, the README,
    and changelog. Describe observed compatibility, not presumed compatibility.
 2. Run `make package` on macOS. Run the relevant manual checks in `TESTING.md`
    only on hardware available for deliberate display testing.
@@ -30,9 +30,9 @@ Never commit certificates, private keys, account credentials, or notarization
 profiles. This repository's CI requires no secrets and does not publish releases
 or install login items automatically.
 
-## Enabling GitHub Actions
+## GitHub Actions
 
-The workflow is supplied at `docs/github-actions-ci.yml`. Move it to
-`.github/workflows/ci.yml` using a GitHub credential authorized to write workflows.
-The initial release publisher did not have that scope, so hosted CI is not yet
-active. The template requests read-only repository access and no secrets.
+The workflow at `.github/workflows/ci.yml` runs on pushes to `main`, pull requests,
+and manual dispatch. It requests read-only repository access and no secrets.
+Check the Actions result for the exact release commit before publishing.
+Hosted CI was added after the original v0.1.0 preview.
